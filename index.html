@@ -63,6 +63,25 @@
             font-size: 14px;
         }
 
+        .backend-status {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 12px;
+            margin-top: 10px;
+            font-weight: 600;
+        }
+
+        .backend-status.online {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .backend-status.offline {
+            background: #ffebee;
+            color: #c62828;
+        }
+
         .input-group {
             margin-bottom: 20px;
         }
@@ -209,6 +228,23 @@
             color: #c62828;
         }
 
+        .download-link {
+            display: inline-block;
+            margin-top: 10px;
+            padding: 12px 25px;
+            background: #2e7d32;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .download-link:hover {
+            background: #1b5e20;
+            transform: translateY(-2px);
+        }
+
         .loading {
             display: none;
             text-align: center;
@@ -229,6 +265,23 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+
+        .config-section {
+            margin-top: 30px;
+            padding: 20px;
+            background: #fff3e0;
+            border-radius: 10px;
+            border-left: 4px solid #ff9800;
+        }
+
+        .config-section h3 {
+            color: #e65100;
+            margin-bottom: 10px;
+        }
+
+        .config-section input {
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
@@ -237,9 +290,32 @@
             <div class="logo">🎬</div>
             <h1>Descargador de YouTube</h1>
             <p class="subtitle">Descarga videos y audio de manera sencilla</p>
+            <div id="backendStatus" class="backend-status offline">
+                🔴 Configurando backend...
+            </div>
         </div>
 
-        <form id="downloadForm">
+        <!-- Sección de configuración del backend -->
+        <div class="config-section">
+            <h3>⚙️ Configuración del Backend</h3>
+            <p style="color: #666; font-size: 14px; margin-bottom: 10px;">
+                Ingresa la URL de tu backend desplegado en Railway/Render:
+            </p>
+            <input 
+                type="text" 
+                id="backendUrl" 
+                placeholder="https://tu-backend.railway.app"
+                style="width: 100%;"
+            >
+            <button 
+                onclick="saveBackendUrl()" 
+                style="margin-top: 10px; padding: 10px 20px; background: #ff9800; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: 600;"
+            >
+                Guardar y Probar Conexión
+            </button>
+        </div>
+
+        <form id="downloadForm" style="margin-top: 30px;">
             <div class="input-group">
                 <label for="videoUrl">URL del Video de YouTube</label>
                 <input 
@@ -280,18 +356,70 @@
 
         <div class="loading">
             <div class="spinner"></div>
-            <p style="margin-top: 10px; color: #667eea; font-weight: 600;">Procesando...</p>
+            <p style="margin-top: 10px; color: #667eea; font-weight: 600;">Procesando descarga...</p>
         </div>
 
         <div id="resultBox" class="result-box"></div>
 
         <div class="info-box">
-            <p><strong>ℹ️ Importante:</strong> Esta es una interfaz de demostración. Para que funcione completamente, necesitas configurar un servidor backend que procese las descargas. Solo para uso personal y educativo.</p>
+            <p><strong>ℹ️ Importante:</strong> Esta herramienta es solo para uso personal y educativo. Respeta los derechos de autor y los términos de servicio de YouTube.</p>
         </div>
     </div>
 
     <script>
         let selectedFormat = 'video';
+        let BACKEND_URL = localStorage.getItem('backendUrl') || '';
+
+        // Verificar estado del backend al cargar
+        window.addEventListener('load', () => {
+            if (BACKEND_URL) {
+                document.getElementById('backendUrl').value = BACKEND_URL;
+                checkBackendStatus();
+            }
+        });
+
+        async function checkBackendStatus() {
+            const statusEl = document.getElementById('backendStatus');
+            
+            if (!BACKEND_URL) {
+                statusEl.className = 'backend-status offline';
+                statusEl.textContent = '🔴 Backend no configurado';
+                return;
+            }
+
+            try {
+                const response = await fetch(BACKEND_URL + '/');
+                if (response.ok) {
+                    statusEl.className = 'backend-status online';
+                    statusEl.textContent = '🟢 Backend conectado';
+                } else {
+                    throw new Error('Backend no responde');
+                }
+            } catch (error) {
+                statusEl.className = 'backend-status offline';
+                statusEl.textContent = '🔴 Backend desconectado';
+            }
+        }
+
+        function saveBackendUrl() {
+            let url = document.getElementById('backendUrl').value.trim();
+            
+            // Asegurar que no termine con /
+            if (url.endsWith('/')) {
+                url = url.slice(0, -1);
+            }
+            
+            // Validar URL
+            if (!url.startsWith('http')) {
+                alert('La URL debe comenzar con http:// o https://');
+                return;
+            }
+            
+            BACKEND_URL = url;
+            localStorage.setItem('backendUrl', url);
+            checkBackendStatus();
+            alert('URL del backend guardada. Probando conexión...');
+        }
 
         // Manejo de selección de formato
         document.querySelectorAll('.format-option').forEach(option => {
@@ -312,46 +440,77 @@
         });
 
         // Manejo del formulario
-        document.getElementById('downloadForm').addEventListener('submit', function(e) {
+        document.getElementById('downloadForm').addEventListener('submit', async function(e) {
             e.preventDefault();
+            
+            if (!BACKEND_URL) {
+                showResult('error', '❌ Error', 'Debes configurar la URL del backend primero.');
+                return;
+            }
             
             const url = document.getElementById('videoUrl').value;
             const quality = document.getElementById('quality').value;
             const resultBox = document.getElementById('resultBox');
             const loading = document.querySelector('.loading');
+            const btn = document.querySelector('.btn-download');
             
             // Validar URL de YouTube
             const youtubeRegex = /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/.+/;
             
             if (!youtubeRegex.test(url)) {
-                resultBox.className = 'result-box error';
-                resultBox.style.display = 'block';
-                resultBox.innerHTML = '<h3>❌ Error</h3><p>Por favor, ingresa una URL válida de YouTube.</p>';
+                showResult('error', '❌ Error', 'Por favor, ingresa una URL válida de YouTube.');
                 return;
             }
             
             // Mostrar loading
             loading.style.display = 'block';
             resultBox.style.display = 'none';
+            btn.disabled = true;
             
-            // Simular procesamiento (aquí iría la llamada al backend)
-            setTimeout(() => {
+            try {
+                const response = await fetch(BACKEND_URL + '/api/download', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        url: url,
+                        format: selectedFormat,
+                        quality: quality
+                    })
+                });
+                
+                const data = await response.json();
+                
                 loading.style.display = 'none';
-                resultBox.className = 'result-box';
-                resultBox.style.display = 'block';
-                resultBox.innerHTML = `
-                    <h3>ℹ️ Backend Requerido</h3>
-                    <p>Para completar la descarga, necesitas implementar un backend que:</p>
-                    <ul style="margin: 10px 0 10px 20px; line-height: 1.8;">
-                        <li>Extraiga el video de YouTube usando librerías como <strong>yt-dlp</strong> o <strong>youtube-dl</strong></li>
-                        <li>Procese la URL: <code style="background: #fff; padding: 2px 6px; border-radius: 3px;">${url}</code></li>
-                        <li>Formato: <strong>${selectedFormat === 'video' ? 'Video' : 'Solo Audio'}</strong></li>
-                        <li>Calidad: <strong>${quality}</strong></li>
-                    </ul>
-                    <p style="margin-top: 10px;">Puedes usar Python con Flask/FastAPI + yt-dlp en el backend.</p>
-                `;
-            }, 2000);
+                btn.disabled = false;
+                
+                if (data.success) {
+                    const downloadUrl = BACKEND_URL + data.download_url;
+                    showResult('success', '✅ ¡Éxito!', 
+                        `<p><strong>Título:</strong> ${data.title}</p>
+                         <p>Tu descarga está lista:</p>
+                         <a href="${downloadUrl}" class="download-link" download>
+                            📥 Descargar Ahora
+                         </a>`
+                    );
+                } else {
+                    showResult('error', '❌ Error', data.error || 'Ocurrió un error al procesar el video.');
+                }
+            } catch (error) {
+                loading.style.display = 'none';
+                btn.disabled = false;
+                showResult('error', '❌ Error de Conexión', 
+                    'No se pudo conectar con el backend. Verifica que esté funcionando correctamente.');
+            }
         });
+
+        function showResult(type, title, message) {
+            const resultBox = document.getElementById('resultBox');
+            resultBox.className = 'result-box' + (type === 'error' ? ' error' : '');
+            resultBox.style.display = 'block';
+            resultBox.innerHTML = `<h3>${title}</h3><div>${message}</div>`;
+        }
     </script>
 </body>
 </html>
