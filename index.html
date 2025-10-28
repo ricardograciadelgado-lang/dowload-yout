@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Descargador de Videos de YouTube</title>
+    <title>Descargador Multi-Plataforma</title>
     <style>
         * {
             margin: 0;
@@ -25,7 +25,7 @@
             background: rgba(255, 255, 255, 0.95);
             border-radius: 20px;
             padding: 40px;
-            max-width: 600px;
+            max-width: 700px;
             width: 100%;
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
             animation: fadeIn 0.5s ease;
@@ -61,6 +61,36 @@
         .subtitle {
             color: #666;
             font-size: 14px;
+        }
+
+        .platforms {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+
+        .platform-badge {
+            padding: 8px 16px;
+            background: #f0f4ff;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #667eea;
+            border: 2px solid #667eea;
+        }
+
+        .platform-badge.working {
+            background: #e8f5e9;
+            color: #2e7d32;
+            border-color: #2e7d32;
+        }
+
+        .platform-badge.experimental {
+            background: #fff3e0;
+            color: #f57c00;
+            border-color: #f57c00;
         }
 
         .backend-status {
@@ -108,6 +138,17 @@
             box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
         }
 
+        .detected-platform {
+            margin-top: 10px;
+            padding: 10px;
+            background: #f0f4ff;
+            border-radius: 8px;
+            display: none;
+            font-size: 14px;
+            color: #667eea;
+            font-weight: 600;
+        }
+
         .format-group {
             margin-bottom: 20px;
         }
@@ -136,6 +177,11 @@
             border-color: #667eea;
             background: #667eea;
             color: white;
+        }
+
+        .format-option.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
         }
 
         .quality-group {
@@ -288,8 +334,16 @@
     <div class="container">
         <div class="header">
             <div class="logo">🎬</div>
-            <h1>Descargador de YouTube</h1>
-            <p class="subtitle">Descarga videos y audio de manera sencilla</p>
+            <h1>Descargador Multi-Plataforma</h1>
+            <p class="subtitle">Descarga videos de múltiples redes sociales</p>
+            
+            <div class="platforms">
+                <span class="platform-badge working">✅ TikTok</span>
+                <span class="platform-badge working">✅ Instagram</span>
+                <span class="platform-badge working">✅ Twitter/X</span>
+                <span class="platform-badge experimental">⚠️ YouTube</span>
+            </div>
+            
             <div id="backendStatus" class="backend-status offline">
                 🔴 Configurando backend...
             </div>
@@ -299,12 +353,12 @@
         <div class="config-section">
             <h3>⚙️ Configuración del Backend</h3>
             <p style="color: #666; font-size: 14px; margin-bottom: 10px;">
-                Ingresa la URL de tu backend desplegado en Railway/Render:
+                Ingresa la URL de tu backend desplegado en Render:
             </p>
             <input 
                 type="text" 
                 id="backendUrl" 
-                placeholder="https://tu-backend.railway.app"
+                placeholder="https://tu-backend.onrender.com"
                 style="width: 100%;"
             >
             <button 
@@ -317,16 +371,17 @@
 
         <form id="downloadForm" style="margin-top: 30px;">
             <div class="input-group">
-                <label for="videoUrl">URL del Video de YouTube</label>
+                <label for="videoUrl">URL del Video</label>
                 <input 
                     type="text" 
                     id="videoUrl" 
-                    placeholder="https://www.youtube.com/watch?v=..."
+                    placeholder="Pega aquí la URL de TikTok, Instagram, Twitter, YouTube..."
                     required
                 >
+                <div id="detectedPlatform" class="detected-platform"></div>
             </div>
 
-            <div class="format-group">
+            <div class="format-group" id="formatGroup">
                 <label>Formato</label>
                 <div class="format-options">
                     <div class="format-option selected" data-format="video">
@@ -338,7 +393,7 @@
                 </div>
             </div>
 
-            <div class="quality-group">
+            <div class="quality-group" id="qualityGroup">
                 <label for="quality">Calidad</label>
                 <select id="quality">
                     <option value="highest">Máxima Calidad</option>
@@ -362,13 +417,21 @@
         <div id="resultBox" class="result-box"></div>
 
         <div class="info-box">
-            <p><strong>ℹ️ Importante:</strong> Esta herramienta es solo para uso personal y educativo. Respeta los derechos de autor y los términos de servicio de YouTube.</p>
+            <p><strong>ℹ️ Plataformas soportadas:</strong></p>
+            <ul style="margin: 10px 0 0 20px; line-height: 1.8;">
+                <li><strong>TikTok:</strong> Descarga sin marca de agua ✨</li>
+                <li><strong>Instagram:</strong> Reels, posts y videos</li>
+                <li><strong>Twitter/X:</strong> Todos los videos</li>
+                <li><strong>YouTube:</strong> Experimental (puede fallar)</li>
+            </ul>
+            <p style="margin-top: 10px;"><strong>⚠️</strong> Solo para uso personal y educativo.</p>
         </div>
     </div>
 
     <script>
         let selectedFormat = 'video';
         let BACKEND_URL = localStorage.getItem('backendUrl') || '';
+        let currentPlatform = '';
 
         // Verificar estado del backend al cargar
         window.addEventListener('load', () => {
@@ -404,12 +467,10 @@
         function saveBackendUrl() {
             let url = document.getElementById('backendUrl').value.trim();
             
-            // Asegurar que no termine con /
             if (url.endsWith('/')) {
                 url = url.slice(0, -1);
             }
             
-            // Validar URL
             if (!url.startsWith('http')) {
                 alert('La URL debe comenzar con http:// o https://');
                 return;
@@ -421,9 +482,56 @@
             alert('URL del backend guardada. Probando conexión...');
         }
 
+        // Detectar plataforma al escribir URL
+        document.getElementById('videoUrl').addEventListener('input', function(e) {
+            const url = e.target.value;
+            const detectedEl = document.getElementById('detectedPlatform');
+            
+            if (url.includes('tiktok.com')) {
+                currentPlatform = 'tiktok';
+                detectedEl.textContent = '✅ TikTok detectado - Descarga SIN marca de agua';
+                detectedEl.style.display = 'block';
+                showOnlyVideoOption();
+            } else if (url.includes('instagram.com')) {
+                currentPlatform = 'instagram';
+                detectedEl.textContent = '✅ Instagram detectado';
+                detectedEl.style.display = 'block';
+                showOnlyVideoOption();
+            } else if (url.includes('twitter.com') || url.includes('x.com')) {
+                currentPlatform = 'twitter';
+                detectedEl.textContent = '✅ Twitter/X detectado';
+                detectedEl.style.display = 'block';
+                showOnlyVideoOption();
+            } else if (url.includes('youtube.com') || url.includes('youtu.be')) {
+                currentPlatform = 'youtube';
+                detectedEl.textContent = '⚠️ YouTube detectado (puede requerir varios intentos)';
+                detectedEl.style.display = 'block';
+                showBothOptions();
+            } else {
+                currentPlatform = '';
+                detectedEl.style.display = 'none';
+                showBothOptions();
+            }
+        });
+
+        function showOnlyVideoOption() {
+            const audioOption = document.querySelector('[data-format="audio"]');
+            audioOption.classList.add('disabled');
+            audioOption.style.pointerEvents = 'none';
+            document.querySelector('[data-format="video"]').click();
+        }
+
+        function showBothOptions() {
+            const audioOption = document.querySelector('[data-format="audio"]');
+            audioOption.classList.remove('disabled');
+            audioOption.style.pointerEvents = 'auto';
+        }
+
         // Manejo de selección de formato
         document.querySelectorAll('.format-option').forEach(option => {
             option.addEventListener('click', function() {
+                if (this.classList.contains('disabled')) return;
+                
                 document.querySelectorAll('.format-option').forEach(opt => {
                     opt.classList.remove('selected');
                 });
@@ -454,11 +562,9 @@
             const loading = document.querySelector('.loading');
             const btn = document.querySelector('.btn-download');
             
-            // Validar URL de YouTube
-            const youtubeRegex = /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/.+/;
-            
-            if (!youtubeRegex.test(url)) {
-                showResult('error', '❌ Error', 'Por favor, ingresa una URL válida de YouTube.');
+            // Validar URL
+            if (!url.includes('http')) {
+                showResult('error', '❌ Error', 'Por favor, ingresa una URL válida.');
                 return;
             }
             
@@ -487,8 +593,14 @@
                 
                 if (data.success) {
                     const downloadUrl = BACKEND_URL + data.download_url;
+                    let extraInfo = '';
+                    if (data.platform === 'Tiktok') {
+                        extraInfo = '<p style="color: #2e7d32; font-weight: 600;">✨ Video descargado SIN marca de agua</p>';
+                    }
                     showResult('success', '✅ ¡Éxito!', 
-                        `<p><strong>Título:</strong> ${data.title}</p>
+                        `<p><strong>Plataforma:</strong> ${data.platform}</p>
+                         <p><strong>Título:</strong> ${data.title}</p>
+                         ${extraInfo}
                          <p>Tu descarga está lista:</p>
                          <a href="${downloadUrl}" class="download-link" download>
                             📥 Descargar Ahora
