@@ -1,40 +1,51 @@
 {
-  "_ayuda": "EJEMPLO de formato (historia V0 de prueba). Se reemplaza con tus historias. Cada escena: imagen, audio, dialogo, camara, sale_villano (true/false) e ingredientes (max 3 imagenes: personajes + escenario). 'villano_rol' es como se nombra al villano en ingles para la linea del gordo.",
+  "_ayuda": "EJEMPLO de formato. Se reemplaza con tus historias. 'imagenes' = lo que se pide a ChatGPT (escenarios y hojas; se guardan en imagenes/<nombre>.png). En cada escena, 'ingredientes' usa esos nombres (max 3). 'villano_nombre' = que personaje lleva la plantilla del gordo en su hoja; 'villano_rol' = como se le nombra en ingles en la linea del gordo de Vids.",
   "historias": [
     {
-      "id": "V0",
-      "titulo": "EJEMPLO DE PRUEBA",
+      "id": "V5",
+      "titulo": "EJEMPLO - LA LIBRETA",
+      "villano_nombre": "Don Anselmo",
       "villano_rol": "shop owner in the tight white guayabera",
+      "imagenes": [
+        {
+          "nombre": "V5__tienda",
+          "tipo": "escenario",
+          "lugar": "tienda de abarrotes del barrio",
+          "descripcion": "tiendita de barrio con mostrador de madera gastado, refrigerador viejo de refrescos, estantes con latas y una libreta de fiado junto a la caja."
+        },
+        {
+          "nombre": "V5__Chayo",
+          "tipo": "personaje",
+          "nombre_personaje": "Chayo",
+          "descripcion": "mujer mexicana de 35 años, delgada, cara cansada, cabello recogido, blusa floreada y mandil"
+        },
+        {
+          "nombre": "V5__Don_Anselmo",
+          "tipo": "personaje",
+          "nombre_personaje": "Don Anselmo",
+          "descripcion": "hombre mexicano de 55 años, dueño de la tienda, bigote, guayabera blanca"
+        }
+      ],
       "escenas": [
         {
           "numero": 1,
           "titulo": "La tienda",
-          "imagen": "A candid vertical third-person photograph, documentary realism style, natural available light, no cinematic color grading. Medium shot of Chayo, a tired working woman in her thirties, counting coins at the counter of a small neighborhood shop. Slightly tilted imperfect framing. Natural realistic colors, authentic everyday domestic realism.",
+          "imagen": "A candid vertical third-person photograph, documentary realism style, natural available light, no cinematic color grading. Medium shot of Chayo counting coins at the counter of a small neighborhood shop. Slightly tilted imperfect framing. Natural realistic colors, authentic everyday domestic realism.",
           "audio": "Language: Spanish. Accent: Mexican, working-class urban. Tone: worried, quiet. Ambient sounds: street traffic, old fridge humming, coins clinking, distant radio.",
           "dialogo": "CHAYO (preocupada): \"Otra vez no me alcanza para todo lo de la semana, y todavía me falta pagar la luz, la renta y lo que le debo a don Anselmo.\"",
           "camara": "plano detalle de las monedas sobre el mostrador",
           "sale_villano": false,
-          "ingredientes": ["prueba/V0__Chayo.png", "prueba/V0__tienda.png"]
+          "ingredientes": ["V5__Chayo", "V5__tienda"]
         },
         {
           "numero": 2,
-          "titulo": "El hijo",
-          "imagen": "A candid vertical third-person photograph, documentary realism style, natural available light. Chayo talks with her 16-year-old son at the shop door. Slightly tilted imperfect framing.",
-          "audio": "Language: Spanish. Accent: Mexican, working-class urban. Tone: tender. Ambient sounds: dogs barking, bicycle bell, wind, footsteps.",
-          "dialogo": "CHAYO (cariñosa): \"Tú no te preocupes por el dinero, mijo, tú concéntrate en la escuela, que yo me encargo de que no nos falte nada en esta casa.\"",
-          "camara": "plano medio de los dos en la puerta",
-          "sale_villano": false,
-          "ingredientes": ["prueba/V0__Chayo.png", "prueba/V0__tienda.png"]
-        },
-        {
-          "numero": 3,
           "titulo": "Llega don Anselmo",
-          "imagen": "A candid vertical third-person photograph, documentary realism style, natural available light. Don Anselmo, the shop owner, leans on the counter demanding payment from Chayo. Slightly tilted imperfect framing.",
+          "imagen": "A candid vertical third-person photograph, documentary realism style, natural available light, no cinematic color grading. Don Anselmo leans on the counter demanding payment from Chayo. Slightly tilted imperfect framing. Natural realistic colors, authentic everyday domestic realism.",
           "audio": "Language: Spanish. Accent: Mexican, working-class urban. Tone: arrogant. Ambient sounds: fan spinning, bottles clinking, street vendor calling, door bell.",
           "dialogo": "DON ANSELMO (burlón): \"Ya van tres semanas sin pagarme, Chayo, y aquí no regalo nada; si mañana no traes lo del fiado, se te acaba el crédito.\"",
           "camara": "plano detalle de la libreta del fiado",
           "sale_villano": true,
-          "ingredientes": ["prueba/V0__Chayo.png", "prueba/V0__Don_Anselmo.png", "prueba/V0__tienda.png"]
+          "ingredientes": ["V5__Chayo", "V5__Don_Anselmo", "V5__tienda"]
         }
       ]
     }

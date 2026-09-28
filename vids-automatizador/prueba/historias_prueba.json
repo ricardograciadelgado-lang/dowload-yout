@@ -1,0 +1,43 @@
+{
+  "historias": [
+    {
+      "id": "V0",
+      "titulo": "PRUEBA",
+      "villano_nombre": "Don Anselmo",
+      "villano_rol": "shop owner in the tight white guayabera",
+      "imagenes": [
+        {"nombre": "V0__tienda", "tipo": "escenario", "lugar": "tienda de abarrotes", "descripcion": "tiendita de barrio con mostrador de madera y refrigerador viejo."},
+        {"nombre": "V0__Chayo", "tipo": "personaje", "nombre_personaje": "Chayo", "descripcion": "mujer de 35 años, delgada, cansada, blusa floreada"},
+        {"nombre": "V0__Don_Anselmo", "tipo": "personaje", "nombre_personaje": "Don Anselmo", "descripcion": "hombre de 55 años, dueño de la tienda, guayabera blanca"}
+      ],
+      "escenas": [
+        {
+          "numero": 1, "titulo": "La tienda",
+          "imagen": "A candid vertical third-person photograph. Chayo counts coins at the counter.",
+          "audio": "Language: Spanish. Accent: Mexican. Tone: worried. Ambient sounds: traffic, fridge, coins, radio.",
+          "dialogo": "CHAYO (preocupada): \"Otra vez no me alcanza.\"",
+          "camara": "plano detalle de las monedas",
+          "sale_villano": false,
+          "ingredientes": ["V0__Chayo", "V0__tienda"]
+        },
+        {
+          "numero": 2, "titulo": "El hijo",
+          "imagen": "A candid vertical third-person photograph. Chayo talks with her 16-year-old son.",
+          "audio": "Language: Spanish. Accent: Mexican. Tone: tender. Ambient sounds: dogs, bell, wind, steps.",
+          "dialogo": "CHAYO (cariñosa): \"Tú concéntrate en la escuela.\"",
+          "sale_villano": false,
+          "ingredientes": ["V0__Chayo", "V0__tienda"]
+        },
+        {
+          "numero": 3, "titulo": "Llega don Anselmo",
+          "imagen": "A candid vertical third-person photograph. Don Anselmo demands payment from Chayo.",
+          "audio": "Language: Spanish. Accent: Mexican. Tone: arrogant. Ambient sounds: fan, bottles, vendor, bell.",
+          "dialogo": "DON ANSELMO (burlón): \"Si mañana no pagas, se acaba el crédito.\"",
+          "camara": "plano detalle de la libreta del fiado",
+          "sale_villano": true,
+          "ingredientes": ["V0__Chayo", "V0__Don_Anselmo", "V0__tienda"]
+        }
+      ]
+    }
+  ]
+}

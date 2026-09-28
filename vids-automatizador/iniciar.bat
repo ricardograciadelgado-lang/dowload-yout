@@ -1,4 +1,4 @@
 @echo off
 cd /d "%~dp0"
-python generar_videos.py %*
+python automatizador.py %*
 pause

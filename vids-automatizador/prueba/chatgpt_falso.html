@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>ChatGPT falso (prueba)</title>
+<style>
+  body { font-family: sans-serif; margin: 20px; }
+  #prompt-textarea { border: 1px solid #999; min-height: 40px; padding: 6px; max-width: 600px; }
+  main img { width: 120px; margin: 6px; border: 1px solid #ccc; }
+  .msg { border-bottom: 1px solid #eee; padding: 6px 0; max-width: 600px; }
+</style>
+</head>
+<body>
+<!-- Imita ChatGPT para probar el programa: la hoja del villano se rechaza
+     la primera vez y pasa en un chat nuevo, como dice la guia -->
+<a href="#" data-testid="create-new-chat-button" id="nuevo">Nuevo chat</a>
+<main id="conv"></main>
+<div id="prompt-textarea" contenteditable="true" aria-label="Preguntar a ChatGPT"></div>
+<button data-testid="send-button" aria-label="Enviar">Enviar</button>
+<script>
+  const conv = document.getElementById('conv');
+  const caja = document.getElementById('prompt-textarea');
+  const vistos = {};
+  let n = 0;
+  document.getElementById('nuevo').onclick = e => { e.preventDefault(); conv.innerHTML = ''; };
+  document.querySelector('[data-testid="send-button"]').onclick = () => {
+    const prompt = caja.textContent;
+    caja.textContent = '';
+    conv.insertAdjacentHTML('beforeend', '<div class="msg" data-message-author-role="user"></div>');
+    conv.lastElementChild.textContent = prompt;
+    const r = document.createElement('div');
+    r.className = 'msg';
+    r.setAttribute('data-message-author-role', 'assistant');
+    r.textContent = 'Creando imagen...';
+    conv.appendChild(r);
+    const stop = document.createElement('button');
+    stop.setAttribute('data-testid', 'stop-button');
+    stop.textContent = 'Detener';
+    document.body.appendChild(stop);
+    vistos[prompt] = (vistos[prompt] || 0) + 1;
+    setTimeout(() => {
+      stop.remove();
+      if (prompt.includes('manchas grasientas') && vistos[prompt] === 1) {
+        r.textContent = 'Lo siento, esta imagen podría infringir nuestras normas sobre contenido.';
+        return;
+      }
+      const c = document.createElement('canvas');
+      c.width = 576; c.height = 1024;
+      const g = c.getContext('2d');
+      g.fillStyle = `hsl(${(n++ * 70) % 360},60%,60%)`; g.fillRect(0, 0, 576, 1024);
+      g.fillStyle = '#000'; g.font = '40px sans-serif'; g.fillText('imagen ' + n, 40, 100);
+      r.textContent = 'Aquí tienes la imagen:';
+      const img = document.createElement('img');
+      img.src = c.toDataURL('image/png');
+      r.appendChild(img);
+    }, 1200);
+  };
+</script>
+</body>
+</html>

@@ -1,10 +1,10 @@
 """
-CONFIGURACION DEL AUTOMATIZADOR DE GOOGLE VIDS
-------------------------------------------------
+CONFIGURACION DEL AUTOMATIZADOR (ChatGPT + Google Vids)
+--------------------------------------------------------
 Aqui se cambia todo sin tocar el resto del programa.
 
-La seccion SELECTORES le dice al programa como se llama cada boton o
-caja dentro de Vids (sacado de la guia "Hacer videos en Google Vids").
+Las secciones SELECTORES y SELECTORES_CHATGPT le dicen al programa como
+se llama cada boton o caja (sacado de la guia "Hacer videos en Google Vids").
 
 Cada selector puede escribirse de 3 formas:
     {"rol": "button", "nombre": "Generar"}  -> un boton con ese nombre
@@ -23,6 +23,8 @@ PUERTO_CHROME = 9222
 
 # --- Archivos -------------------------------------------------------------
 ARCHIVO_HISTORIAS = "historias.json"
+ARCHIVO_ESTADO = "estado.txt"          # resumen corto para que Claude supervise
+PRUEBA = False                         # lo activa --prueba (no tocar)
 ARCHIVO_PROGRESO = "progreso.json"     # recuerda que escenas ya se hicieron
 CARPETA_SALIDA = "salida"              # capturas y registro por historia
 
@@ -113,5 +115,69 @@ SELECTORES = {
     # Aparece en la tarjeta cuando el clip esta listo
     "senal_listo": [
         {"rol": "button", "nombre": "Insertar"},
+    ],
+}
+
+
+# ===========================================================================
+# CHATGPT (escenarios y hojas de personaje)
+# ===========================================================================
+URL_CHATGPT = "https://chatgpt.com"
+CARPETA_IMAGENES = "imagenes"          # aqui se guardan V5__Chayo.png, V5__tienda.png...
+ESPERA_MAXIMA_IMAGEN = 300             # segundos por imagen
+# ChatGPT bloquea la carga unos minutos si se abren muchos chats seguidos
+PAUSA_ENTRE_CHATS = (40, 80)
+ESPERA_SI_BLOQUEA = 300                # "No se ha podido cargar esta conversacion"
+
+PLANTILLA_ESCENARIO = (
+    "creame la imagen del escenario {lugar} sin personajes, en formato vertical: "
+    "{descripcion} Estética: Documental honesto, luz natural disponible."
+)
+PLANTILLA_PERSONAJE = (
+    "ahora creame la hoja del personaje {nombre} — {descripcion} en fondo blanco "
+    "en primer plano de el y en cuerpo completo a la izquierda sin texto"
+)
+PLANTILLA_GORDO = (
+    "Complexión de obesidad mórbida irreal: cuerpo gigantesco, descomunalmente ancho "
+    "y deforme por el peso excesivo, rostro exageradamente cachetón, gordote y papujado "
+    "con una papada colosal que le oculta el cuello, y la piel llena de severas manchas "
+    "grasientas. Su colosal panza sobresale y queda totalmente al descubierto por debajo "
+    "de la ropa: cada prenda le queda diminuta, asfixiantemente apretada y encogida, con "
+    "las costuras a punto de reventar."
+)
+
+TEXTOS_RECHAZO_CHATGPT = [
+    "podría infringir nuestras normas",
+    "infringir nuestras políticas",
+    "no puedo ayudar con eso",
+    "may violate our",
+    "violate our content policies",
+    "can't help with that",
+]
+TEXTOS_BLOQUEO_CHATGPT = [
+    "no se ha podido cargar esta conversación",
+    "unable to load conversation",
+]
+
+SELECTORES_CHATGPT = {
+    "nuevo_chat": [
+        {"css": 'a[data-testid="create-new-chat-button"]'},
+        {"rol": "link", "nombre": "Nuevo chat"},
+        {"rol": "button", "nombre": "Nuevo chat"},
+    ],
+    "caja_prompt": [
+        {"css": "#prompt-textarea"},
+        {"css": '[contenteditable][aria-label*="ChatGPT"]'},
+    ],
+    "boton_enviar": [
+        {"css": '[data-testid="send-button"]'},
+        {"rol": "button", "nombre": "Enviar"},
+    ],
+    # Mientras responde aparece el boton de detener
+    "respondiendo": [
+        {"css": '[data-testid="stop-button"]'},
+    ],
+    "respuesta": [
+        {"css": '[data-message-author-role="assistant"]'},
     ],
 }

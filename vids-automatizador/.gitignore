@@ -1,4 +1,9 @@
 salida/
+imagenes/
 progreso.json
-progreso_prueba.json
+estado.txt
+prueba/salida/
+prueba/imagenes/
+prueba/progreso_prueba.json
+prueba/estado_prueba.txt
 __pycache__/
