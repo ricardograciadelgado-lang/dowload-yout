@@ -26,21 +26,36 @@ exacta la primera vez). Todo lo que necesitas leer está ahí.
    terminal, en segundo plano:
    `python automatizador.py` (o `--historia V5`, `--solo imagenes`, `--solo vids`).
 3. **Vigilar sin gastar.** NO mires el navegador todo el rato. Cada 5-10 minutos
-   lee solo `estado.txt` (o ejecuta `python automatizador.py --resumen`).
-   Tiene una línea por historia y la lista "NECESITA REVISION".
-4. **Intervenir solo si hace falta**, cuando `estado.txt` diga:
-   - `faltan ingredientes` / imagen `rechazado`: haz esa hoja a mano en un chat
-     NUEVO de ChatGPT con la plantilla completa (no la suavices), guárdala en
-     `imagenes/` con el nombre indicado (ej. `V5__Anselmo.png`) y relanza
-     `python automatizador.py --historia V5`.
-   - clip `rechazado`: lee `salida/<historia>/registro.txt`, haz el cambio mínimo
-     en `historias.json` y relanza. Avísale al dueño qué cambiaste.
-   - `PARADO: El clip mide 1280x720`: en Vids abre el chip "Omni • 720p • ▯ • 10s",
-     toca Horizontal y luego Vertical, y relanza.
-   - `No encontre '...' en la pagina`: Google o ChatGPT cambió un botón. Mira la
-     página una vez, busca el nombre nuevo del botón y actualízalo en
-     `SELECTORES` / `SELECTORES_CHATGPT` de `config.py`.
-   - `error` o `tiempo` repetido: toma UNA captura del navegador para ver qué pasa.
+   ejecuta solo:
+   `python control.py estado`
+   Te da el resumen por historia y, si la hay, la **PREGUNTA PENDIENTE**.
+4. **Responder al programa.** Cuando algo no sale solo (el programa ya reintentó
+   y aplicó los cambios mínimos conocidos), el programa **se pausa y te pregunta**.
+   La pregunta trae el tipo de problema, el prompt que usó y la ruta de una
+   captura (mírala solo si la necesitas). Contesta con uno de estos comandos:
+   - `python control.py responder reintentar_con_prompt --prompt "..."`:
+     el prompt corregido con el **cambio mínimo** (quita la palabra o la jerga
+     que bloquea, cambia la edad exacta por "teenage boy", etc.). Avísale después
+     al dueño qué cambiaste.
+   - `python control.py responder reintentar`: igual otra vez (por ejemplo,
+     después de arreglar algo tú en el navegador).
+   - `python control.py responder saltar`: la deja pendiente y sigue.
+   - `python control.py responder parar`: detiene todo; al relanzar sigue donde iba.
+   Si no respondes en 30 minutos, el programa la salta solo y sigue.
+
+   Casos especiales:
+   - `imagen_rechazado` de una hoja: la regla del dueño es pedirla TAL CUAL en un
+     chat nuevo (el programa ya lo hizo 3 veces). Prueba `reintentar` una vez más;
+     si vuelve a fallar, `saltar` y hazla tú a mano en un chat nuevo; guárdala en
+     `imagenes/` con su nombre (ej. `V5__Anselmo.png`).
+   - `tamano_incorrecto`: en Vids abre el chip "Omni • 720p • ▯ • 10s", toca
+     Horizontal y luego Vertical, y responde `reintentar`.
+   - `No encontre '...' en la pagina` (en el detalle): Google u OpenAI cambió un
+     botón. Responde `parar`, mira la página una vez, pon el nombre nuevo en
+     `SELECTORES` / `SELECTORES_CHATGPT` de `config.py` y relanza.
+
+   Órdenes en cualquier momento (por ejemplo, si el dueño necesita el navegador):
+   `python control.py pausar`, `python control.py reanudar`, `python control.py parar`.
 5. **Al terminar los clips**, arma la línea de tiempo en Vids como dice la guía
    (sección 5: seleccionar escena → "+" de arriba → "Insertar", de la 1 a la 12,
    nunca "Reemplazar"), ponle nombre y descarga el MP4 (sección 6).

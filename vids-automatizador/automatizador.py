@@ -25,6 +25,7 @@ from pathlib import Path
 
 from playwright.sync_api import sync_playwright
 
+import canal
 import chatgpt
 import config
 import ia_vision
@@ -78,6 +79,9 @@ def escribir_estado(historias, progreso, fase, pendientes):
         lineas += [f"- {p}" for p in pendientes]
     else:
         lineas.append("Sin problemas por ahora.")
+    pregunta = AQUI / config.CARPETA_COMUNICACION / "pregunta.json"
+    if pregunta.exists():
+        lineas += ["", "ESPERANDO A CLAUDE: ver 'python control.py pregunta'"]
     texto = "\n".join(lineas) + "\n"
     (AQUI / config.ARCHIVO_ESTADO).write_text(texto, encoding="utf-8")
     return texto
@@ -127,6 +131,31 @@ def conectar(p, prueba, ver, necesita_chatgpt, necesita_vids):
 
 # --- Fase 1: ChatGPT ---------------------------------------------------------
 
+def _intentar_imagen(page, hid, nombre, prompt, destino):
+    """Intentos automaticos de una imagen. Devuelve el ultimo estado."""
+    estado = "error"
+    for intento in range(1, config.MAX_INTENTOS_POR_ESCENA + 1):
+        canal.revisar_ordenes()
+        print(f"{nombre}: pidiendo a ChatGPT (intento {intento})...")
+        try:
+            estado = chatgpt.generar_imagen(page, prompt, destino)
+        except chatgpt.ElementoNoEncontrado as e:
+            estado = "error"
+            print(f"   {e}")
+        print(f"   -> {estado}")
+        anotar(hid, f"{nombre} intento {intento}: {estado}")
+        if estado == "listo":
+            return estado
+        if estado == "bloqueado":
+            print(f"   ChatGPT bloqueo la carga; espero {config.ESPERA_SI_BLOQUEA} s")
+            time.sleep(0 if config.PRUEBA else config.ESPERA_SI_BLOQUEA)
+            page.reload()
+        # Rechazada: la misma peticion TAL CUAL en un chat NUEVO
+        time.sleep(random.uniform(*config.PAUSA_ENTRE_CHATS))
+        chatgpt.nuevo_chat(page)
+    return estado
+
+
 def fase_imagenes(page, historia, pendientes, actualizar):
     hid = historia["id"]
     faltan = [i for i in historia.get("imagenes", []) if not ruta_imagen(i["nombre"]).exists()]
@@ -138,27 +167,27 @@ def fase_imagenes(page, historia, pendientes, actualizar):
         nombre = imagen["nombre"]
         prompt = chatgpt.armar_prompt(imagen, historia.get("villano_nombre"))
         destino = ruta_imagen(nombre)
-        estado = "error"
-        for intento in range(1, config.MAX_INTENTOS_POR_ESCENA + 1):
-            print(f"{nombre}: pidiendo a ChatGPT (intento {intento})...")
-            try:
-                estado = chatgpt.generar_imagen(page, prompt, destino)
-            except chatgpt.ElementoNoEncontrado as e:
-                estado = "error"
-                print(f"   {e}")
-            print(f"   -> {estado}")
-            anotar(hid, f"{nombre} intento {intento}: {estado}")
+        while True:
+            estado = _intentar_imagen(page, hid, nombre, prompt, destino)
             if estado == "listo":
                 break
-            if estado == "bloqueado":
-                print(f"   ChatGPT bloqueo la carga; espero {config.ESPERA_SI_BLOQUEA} s")
-                time.sleep(0 if config.PRUEBA else config.ESPERA_SI_BLOQUEA)
-                page.reload()
-            # Rechazada: la misma peticion TAL CUAL en un chat NUEVO
-            time.sleep(random.uniform(*config.PAUSA_ENTRE_CHATS))
+            # No salio sola: se le pregunta a Claude
+            captura = AQUI / config.CARPETA_SALIDA / hid / f"{nombre}_{estado}.png"
+            captura.parent.mkdir(parents=True, exist_ok=True)
+            page.screenshot(path=str(captura))
+            actualizar(f"{hid} imagenes (esperando a Claude)")
+            resp = canal.preguntar(
+                f"imagen_{estado}", nombre,
+                f"ChatGPT dio '{estado}' {config.MAX_INTENTOS_POR_ESCENA} veces (cada vez en chat nuevo).",
+                prompt, captura,
+            )
+            if resp["accion"] == "saltar":
+                pendientes.append(f"{nombre} ({estado}): hacer la hoja a mano en un chat nuevo")
+                break
+            if resp["accion"] == "reintentar_con_prompt":
+                prompt = resp["prompt"]
+                anotar(hid, f"{nombre}: Claude cambio el prompt")
             chatgpt.nuevo_chat(page)
-        if estado != "listo":
-            pendientes.append(f"{nombre} ({estado}): hacer la hoja a mano en un chat nuevo")
         actualizar(f"{hid} imagenes")
         time.sleep(random.uniform(*config.PAUSA_ENTRE_ESCENAS) / 4)
 
@@ -189,6 +218,35 @@ def aplicar_cambios_minimos(prompt):
     return prompt, cambios
 
 
+def _intentar_clip(page, hid, clave, prompt, ingredientes, usar_ia):
+    """Intentos automaticos de un clip. Devuelve (estado, prompt usado, captura)."""
+    estado, captura = "error", None
+    for intento in range(1, config.MAX_INTENTOS_POR_ESCENA + 1):
+        canal.revisar_ordenes()
+        if intento == config.MAX_INTENTOS_POR_ESCENA and estado == "rechazado":
+            nuevo, cambios = aplicar_cambios_minimos(prompt)
+            if not cambios:
+                break  # no hay cambio minimo conocido: se le pregunta a Claude
+            prompt = nuevo
+            print(f"   cambios minimos: {', '.join(cambios)}")
+            anotar(hid, f"{clave} cambios minimos: {', '.join(cambios)}")
+        print(f"{clave}: generando (intento {intento})...")
+        try:
+            antes = vids.generar_escena(page, prompt, [str(i) for i in ingredientes])
+            estado = vids.esperar_resultado(page, antes, usar_ia)
+        except vids.ElementoNoEncontrado as e:
+            estado = "error"
+            print(f"   {e}")
+        captura = AQUI / config.CARPETA_SALIDA / hid / f"{clave}_{estado}.png"
+        captura.parent.mkdir(parents=True, exist_ok=True)
+        page.screenshot(path=str(captura))
+        anotar(hid, f"{clave} intento {intento}: {estado}")
+        print(f"   -> {estado}")
+        if estado == "listo":
+            break
+    return estado, prompt, captura
+
+
 def fase_vids(page, historia, progreso, usar_ia, estado_global, pendientes, actualizar):
     hid = historia["id"]
     print(f"\n=== {hid}: clips en Vids ===")
@@ -197,6 +255,7 @@ def fase_vids(page, historia, progreso, usar_ia, estado_global, pendientes, actu
         vids.abrir_panel(page)
         vids.configurar_ajustes(page)
         estado_global["ajustado"] = True
+    corregidos = progreso.setdefault("_prompts_de_claude", {})
 
     for escena in historia["escenas"]:
         clave = f"{hid}-E{escena['numero']:02d}"
@@ -211,45 +270,41 @@ def fase_vids(page, historia, progreso, usar_ia, estado_global, pendientes, actu
             pendientes.append(f"{clave}: faltan ingredientes {', '.join(faltan)}")
             continue
 
-        prompt = construir_prompt(historia, escena)
-        estado = "error"
-        for intento in range(1, config.MAX_INTENTOS_POR_ESCENA + 1):
-            if intento == config.MAX_INTENTOS_POR_ESCENA and estado == "rechazado":
-                prompt, cambios = aplicar_cambios_minimos(prompt)
-                if not cambios:
-                    break  # no hay cambio minimo conocido: queda pendiente
-                print(f"   cambios minimos: {', '.join(cambios)}")
-                anotar(hid, f"{clave} cambios minimos: {', '.join(cambios)}")
-            print(f"{clave}: generando (intento {intento})...")
-            try:
-                antes = vids.generar_escena(page, prompt, [str(i) for i in ingredientes])
-                estado = vids.esperar_resultado(page, antes, usar_ia)
-            except vids.ElementoNoEncontrado as e:
-                estado = "error"
-                print(f"   {e}")
-            captura = AQUI / config.CARPETA_SALIDA / hid / f"{clave}_{estado}.png"
-            captura.parent.mkdir(parents=True, exist_ok=True)
-            page.screenshot(path=str(captura))
-            anotar(hid, f"{clave} intento {intento}: {estado}")
-            print(f"   -> {estado}")
+        prompt = corregidos.get(clave) or construir_prompt(historia, escena)
+        while True:
+            estado, prompt, captura = _intentar_clip(page, hid, clave, prompt, ingredientes, usar_ia)
+
+            if estado == "listo" and not estado_global["tamano_ok"]:
+                try:
+                    print(f"   tamano del clip: {vids.comprobar_tamano(page)}")
+                    estado_global["tamano_ok"] = True
+                except vids.TamanoIncorrecto as e:
+                    actualizar(f"{hid} clips (esperando a Claude)")
+                    resp = canal.preguntar(
+                        "tamano_incorrecto", clave,
+                        f"{e} Arreglalo en Vids y responde 'reintentar' para rehacer este clip.",
+                        prompt, captura, opciones=["reintentar", "parar"],
+                    )
+                    continue  # reintentar: se rehace el clip y se vuelve a medir
+
             if estado == "listo":
                 break
-
-        if estado == "listo" and not estado_global["tamano_ok"]:
-            try:
-                print(f"   tamano del clip: {vids.comprobar_tamano(page)}")
-                estado_global["tamano_ok"] = True
-            except vids.TamanoIncorrecto as e:
-                progreso[clave] = "tamano_incorrecto"
-                guardar_json(config.ARCHIVO_PROGRESO, progreso)
-                pendientes.append(f"PARADO: {e}")
-                actualizar("parado por tamano incorrecto")
-                sys.exit(f"\nPARO: {e}")
+            actualizar(f"{hid} clips (esperando a Claude)")
+            resp = canal.preguntar(
+                f"clip_{estado}", clave,
+                f"Vids dio '{estado}' tras los reintentos y cambios minimos automaticos.",
+                prompt, captura,
+            )
+            if resp["accion"] == "saltar":
+                pendientes.append(f"{clave} ({estado}): {escena.get('titulo', '')}")
+                break
+            if resp["accion"] == "reintentar_con_prompt":
+                prompt = resp["prompt"]
+                corregidos[clave] = prompt  # se recuerda si hay que relanzar
+                anotar(hid, f"{clave}: Claude cambio el prompt")
 
         progreso[clave] = estado
         guardar_json(config.ARCHIVO_PROGRESO, progreso)
-        if estado != "listo":
-            pendientes.append(f"{clave} ({estado}): {escena.get('titulo', '')}")
         actualizar(f"{hid} clips")
         time.sleep(random.uniform(*config.PAUSA_ENTRE_ESCENAS))
 
@@ -277,6 +332,8 @@ def main():
         config.ARCHIVO_ESTADO = "prueba/estado_prueba.txt"
         config.CARPETA_IMAGENES = "prueba/imagenes"
         config.CARPETA_SALIDA = "prueba/salida"
+        config.CARPETA_COMUNICACION = "prueba/comunicacion"
+        config.ESPERA_RESPUESTA_CLAUDE = 60
         (AQUI / config.ARCHIVO_PROGRESO).unlink(missing_ok=True)
         for f in (AQUI / config.CARPETA_IMAGENES).glob("*.png"):
             f.unlink()
@@ -308,11 +365,15 @@ def main():
     with sync_playwright() as p:
         pagina_gpt, pagina_vids = conectar(p, args.prueba, args.ver, hacer_imagenes, hacer_vids)
         estado_global = {"ajustado": False, "tamano_ok": False}
-        for historia in historias:
-            if hacer_imagenes:
-                fase_imagenes(pagina_gpt, historia, pendientes, actualizar)
-            if hacer_vids:
-                fase_vids(pagina_vids, historia, progreso, usar_ia, estado_global, pendientes, actualizar)
+        try:
+            for historia in historias:
+                if hacer_imagenes:
+                    fase_imagenes(pagina_gpt, historia, pendientes, actualizar)
+                if hacer_vids:
+                    fase_vids(pagina_vids, historia, progreso, usar_ia, estado_global, pendientes, actualizar)
+        except canal.ParadaPedida as e:
+            actualizar(f"parado ({e})")
+            sys.exit(f"\nParado: {e}. Al relanzar sigue donde se quedo.")
 
     actualizar("terminado")
     print("\n" + (AQUI / config.ARCHIVO_ESTADO).read_text(encoding="utf-8"))

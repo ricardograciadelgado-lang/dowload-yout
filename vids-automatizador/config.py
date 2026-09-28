@@ -24,6 +24,8 @@ PUERTO_CHROME = 9222
 # --- Archivos -------------------------------------------------------------
 ARCHIVO_HISTORIAS = "historias.json"
 ARCHIVO_ESTADO = "estado.txt"          # resumen corto para que Claude supervise
+CARPETA_COMUNICACION = "comunicacion"  # preguntas del programa y respuestas de Claude
+ESPERA_RESPUESTA_CLAUDE = 1800         # segundos; si Claude no contesta, salta y sigue
 PRUEBA = False                         # lo activa --prueba (no tocar)
 ARCHIVO_PROGRESO = "progreso.json"     # recuerda que escenas ya se hicieron
 CARPETA_SALIDA = "salida"              # capturas y registro por historia

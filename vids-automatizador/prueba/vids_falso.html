@@ -49,7 +49,7 @@
     t.textContent = 'Generando 35%';
     $('#tarjetas').appendChild(t);
     setTimeout(() => {
-      if (prompt.includes('16-year-old') || ingr > 3) {
+      if (prompt.includes('16-year-old') || prompt.includes('siempre_rechazo') || ingr > 3) {
         t.innerHTML = '<p class="error">Parece que tu solicitud infringe nuestras condiciones</p>';
       } else {
         t.innerHTML = '<p>Clip ' + res + ' ' + (vertical ? 'vertical' : 'HORIZONTAL') +

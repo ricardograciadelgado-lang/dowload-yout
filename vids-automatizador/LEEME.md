@@ -14,9 +14,13 @@ Un solo programa para todo el trabajo de cada historia:
 Busca los botones por su **nombre**, no por posición, así que el zoom o mover
 la ventana no le afecta.
 
-Mientras trabaja, escribe **`estado.txt`**, un resumen corto de cómo va. Así tu
-Claude de escritorio puede supervisar leyendo solo ese archivo, sin gastar
-tokens mirando la pantalla (ver `INSTRUCCIONES_CLAUDE.md`).
+**Se comunica con tu Claude de escritorio**, que lo supervisa sin gastar
+tokens mirando la pantalla (ver `INSTRUCCIONES_CLAUDE.md`):
+- `python control.py estado`: resumen de cómo va y pregunta pendiente.
+- Cuando algo no sale solo, el programa **se pausa y le pregunta a Claude**.
+  Claude contesta, por ejemplo `python control.py responder reintentar_con_prompt --prompt "..."`,
+  y el programa sigue.
+- Claude puede pausar, reanudar o parar el trabajo en cualquier momento.
 
 > Qué **no** hace todavía: armar la línea de tiempo (+ → Insertar, 1 a 12),
 > ponerle nombre al video ni descargar el MP4. Eso lo hace Claude de escritorio

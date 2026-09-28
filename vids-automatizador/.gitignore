@@ -7,3 +7,5 @@ prueba/imagenes/
 prueba/progreso_prueba.json
 prueba/estado_prueba.txt
 __pycache__/
+comunicacion/
+prueba/comunicacion/
