@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Vids falso (prueba)</title>
+<style>
+  body { font-family: sans-serif; margin: 30px; }
+  #panel { display: none; border: 1px solid #ccc; padding: 16px; max-width: 560px; }
+  #editor { border: 1px solid #999; min-height: 80px; padding: 6px; white-space: pre-wrap; }
+  #menu { display: none; border: 1px dashed #999; padding: 8px; margin: 8px 0; }
+  .tarjeta { border: 1px solid #ddd; margin: 6px 0; padding: 6px; }
+  .error { color: #b00020; }
+</style>
+</head>
+<body>
+<!-- Imita Google Vids segun la guia, para probar el programa sin gastar creditos -->
+<button id="abrirPanel">Generación de video con IA</button>
+<div id="panel">
+  <div role="tablist"><button role="tab" id="crear">Crear</button></div>
+  <button id="chip">Omni • 1080p • ▯ • 10s</button>
+  <div id="menu">
+    <button data-res>720p</button><button data-res>1080p</button>
+    <button id="hor">Horizontal</button><button id="ver">Vertical</button>
+    <button>10s</button>
+  </div>
+  <input type="file" accept="image/png,image/jpeg" style="display:none" id="ing">
+  <p>Ingredientes: <span id="ningr">0</span></p>
+  <div id="editor" contenteditable="true" aria-label="Describe tu video…"></div>
+  <button id="borrar">Borrar</button>
+  <button aria-label="Generar">➜</button>
+  <div id="tarjetas"></div>
+</div>
+<script>
+  const $ = s => document.querySelector(s);
+  let ingr = 0, res = '1080p', tocoHorizontal = false, vertical = false;
+  $('#abrirPanel').onclick = () => { $('#panel').style.display = 'block'; };
+  $('#crear').onclick = () => { $('#panel').style.display = 'block'; };
+  $('#chip').onclick = () => { $('#menu').style.display = 'block'; };
+  document.querySelectorAll('[data-res]').forEach(b => b.onclick = () => { res = b.textContent; });
+  $('#hor').onclick = () => { tocoHorizontal = true; };
+  $('#ver').onclick = () => { vertical = tocoHorizontal; };
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') $('#menu').style.display = 'none'; });
+  $('#ing').onchange = () => { ingr++; $('#ningr').textContent = ingr; };
+  $('#borrar').onclick = () => { $('#editor').textContent = ''; ingr = 0; $('#ningr').textContent = 0; };
+  document.querySelector('[aria-label="Generar"]').onclick = () => {
+    const prompt = $('#editor').textContent.toLowerCase();
+    const t = document.createElement('div');
+    t.className = 'tarjeta';
+    t.textContent = 'Generando 35%';
+    $('#tarjetas').appendChild(t);
+    setTimeout(() => {
+      if (prompt.includes('16-year-old') || ingr > 3) {
+        t.innerHTML = '<p class="error">Parece que tu solicitud infringe nuestras condiciones</p>';
+      } else {
+        t.innerHTML = '<p>Clip ' + res + ' ' + (vertical ? 'vertical' : 'HORIZONTAL') +
+          ' con ' + ingr + ' ingredientes</p><button>Insertar</button>';
+      }
+    }, 800);
+  };
+</script>
+</body>
+</html>
