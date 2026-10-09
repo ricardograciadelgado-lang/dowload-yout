@@ -1,13 +1,13 @@
 {
-  "version": "2026-10-09",
-  "_nota": "Este archivo solo AÑADE formas de encontrar botones. Si algo no funciona, la extensión usa sus reglas internas. 'selectors' = selector CSS que debe encontrar UN solo elemento visible. 'labels' = textos exactos (sin importar mayúsculas) que también valen para ese botón.",
+  "version": "2026-10-09b",
+  "_nota": "Este archivo solo AÑADE formas de encontrar botones. 'labels' = textos del botón (sin importar mayúsculas); también vale si el botón dice 'Texto: detalles'. 'selectors' = selector CSS que encuentre UN solo elemento visible.",
   "selectors": {},
   "labels": {
-    "referenceMenu": ["Añadir", "Agregar", "Add", "Añadir avatar o ingredientes", "Add avatar or ingredients"],
-    "referenceUpload": ["Subir", "Upload", "Subir archivo", "Upload file"],
+    "referenceMenu": ["Añadir", "Agregar", "Add", "Añadir avatar o ingredientes", "Agregar un avatar o ingredientes", "Add avatar or ingredients"],
+    "referenceUpload": ["Subir", "Cargar", "Upload", "Subir archivo", "Upload file"],
     "generate": ["Generar", "Generate"],
     "clear": ["Borrar", "Clear"],
-    "config": ["Configuración de la generación", "Generation settings"],
-    "expand": ["Ampliar", "Expand"]
+    "config": ["Configuración de la generación", "Configuración de generación", "Generation settings"],
+    "expand": ["Ampliar", "Expandir", "Expand"]
   }
 }
